@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block basepage %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latest Health News</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style1.css' %}">
+    <style>
+        body {
+            font-family: 'Courier Prime', monospace;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .hover-olive:hover {
+            color: #808000;
+        }
+        .speech-controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+        .speech-button {
+            background-color: #808000;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            max-width: 150px;
+        }
+        .speech-button:hover {
+            background-color: #5a5a00;
+        }
+        @media (max-width: 640px) {
+            .news-item {
+                padding: 1rem;
+            }
+            .news-title {
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen px-4 md:px-6" style="padding-top: 30px;">
+
+    <!-- Back button and heading container -->
+    
+    <div class="w-full max-w-4xl mx-auto pt-16 relative">  <!-- Added pt-16 for top padding and relative positioning -->
+        <a href="{% url 'basedata' %}" class="back-button absolute top-4 left-4">  <!-- Positioned absolutely -->
+            <img src="{% static 'images/backbutton1.png' %}" alt="Back" title="Go back" class="w-8 h-8">
+        </a>
+        <h1 class="text-3xl md:text-4xl mb-8 text-center">Latest Health News</h1>
+    </div>
+
+
+    <main class="flex-grow max-w-4xl mx-auto w-full">
+        <div class="speech-controls">
+            <button id="playButton" class="speech-button rounded">Play</button>
+            <button id="stopButton" class="speech-button rounded">Stop</button>
+        </div>
+
+        <section class="mb-8 md:mb-12">
+            <h2 class="text-xl md:text-2xl mb-4 border-b border-olive pb-2">Diabetes News</h2>
+            <ul class="space-y-4">
+                {% for article in diabetes_news %}
+                <li class="news-item bg-gray-900 p-3 md:p-4 rounded-none">
+                    <a href="{{ article.url }}" target="_blank" class="news-title text-lg md:text-xl block hover-olive">{{ article.title }}</a>
+                    <p class="text-xs md:text-sm text-gray-400 mt-1">{{ article.source.name }}</p>
+                    <p class="mt-2 text-sm md:text-base">{{ article.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="mb-8 md:mb-12">
+            <h2 class="text-xl md:text-2xl mb-4 border-b border-olive pb-2">Blood Pressure News</h2>
+            <ul class="space-y-4">
+                {% for article in blood_pressure_news %}
+                <li class="news-item bg-gray-900 p-3 md:p-4 rounded-none">
+                    <a href="{{ article.url }}" target="_blank" class="news-title text-lg md:text-xl block hover-olive">{{ article.title }}</a>
+                    <p class="text-xs md:text-sm text-gray-400 mt-1">{{ article.source.name }}</p>
+                    <p class="mt-2 text-sm md:text-base">{{ article.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="mb-8 md:mb-12">
+            <h2 class="text-xl md:text-2xl mb-4 border-b border-olive pb-2">Skincare News</h2>
+            <ul class="space-y-4">
+                {% for article in skincare_news %}
+                <li class="news-item bg-gray-900 p-3 md:p-4 rounded-none">
+                    <a href="{{ article.url }}" target="_blank" class="news-title text-lg md:text-xl block hover-olive">{{ article.title }}</a>
+                    <p class="text-xs md:text-sm text-gray-400 mt-1">{{ article.source.name }}</p>
+                    <p class="mt-2 text-sm md:text-base">{{ article.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+
+    <script>
+        // Speech synthesis code remains the same
+        let synth = window.speechSynthesis;
+        let utterance = new SpeechSynthesisUtterance();
+        let isPlaying = false;
+
+        function getAllText() {
+            let allText = '';
+            document.querySelectorAll('h2, a.news-title, p').forEach(element => {
+                allText += element.textContent + '. ';
+            });
+            return allText;
+        }
+
+        document.getElementById('playButton').addEventListener('click', function() {
+            if (!isPlaying) {
+                utterance.text = getAllText();
+                synth.speak(utterance);
+                isPlaying = true;
+            }
+        });
+
+        document.getElementById('stopButton').addEventListener('click', function() {
+            if (isPlaying) {
+                synth.cancel();
+                isPlaying = false;
+            }
+        });
+    </script>
+</body>
+
+{% block navbar %}
+{% endblock navbar %}
+
+{% block footer %}
+{% endblock footer %}
+</html>
+{% endblock basepage %}

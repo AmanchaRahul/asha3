@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+<title>Diabetes Exercise Planner</title>
+{% endblock title %}
+
+{% block basepage %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .btn {
+            background-color: #556B2F;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #6B8E23;
+        }
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .exercise-card {
+            background-color: #111;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(107, 142, 35, 0.3);
+        }
+        .exercise-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #333;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 0;
+            height: 30px;
+            background-color: #556B2F;
+            border-radius: 15px;
+            transition: width 0.5s ease-in-out;
+        }
+        .streak-container {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #111;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #fff;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'wellnessdata' %}" class="back-button">
+        <img src="{% static 'images/backbutton1.png' %}" alt="Back" title="Go back">
+    </a>
+
+    <div class="container" style="margin-top: 2rem;">
+        
+        <h1 class="text-4xl font-bold text-center mb-8">Diabetes Exercise Planner</h1>
+        
+        <div class="exercise-grid">
+            <div class="exercise-card" onclick="showExerciseModal('walking')">
+                <div class="exercise-icon">🚶</div>
+                <h3>Walking</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('swimming')">
+                <div class="exercise-icon">🏊</div>
+                <h3>Swimming</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('cycling')">
+                <div class="exercise-icon">🚴</div>
+                <h3>Cycling</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('yoga')">
+                <div class="exercise-icon">🧘</div>
+                <h3>Yoga</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('strength')">
+                <div class="exercise-icon">💪</div>
+                <h3>Strength Training</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('dancing')">
+                <div class="exercise-icon">💃</div>
+                <h3>Dancing</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('jogging')">
+                <div class="exercise-icon">🏃</div>
+                <h3>Jogging</h3>
+            </div>
+            <div class="exercise-card" onclick="showExerciseModal('pilates')">
+                <div class="exercise-icon">🧘‍♀️</div>
+                <h3>Pilates</h3>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div class="streak-container">
+            <p>Your Exercise Streak: <span id="streakCount">0</span> days</p>
+        </div>
+
+        <button class="btn pulse" onclick="showTip()">Daily Tip</button>
+
+        <!-- New Reset Streak button -->
+        <button class="btn" onclick="resetStreak()" style="background-color: #8B0000; margin-top: 20px;">Reset Streak</button>
+    
+    </div>
+
+    <div id="exerciseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalDescription"></p>
+            <button class="btn" onclick="completeExercise()">Complete Exercise</button>
+        </div>
+    </div>
+
+    <script>
+        let streak = 0;
+        let progress = 0;
+        const exercises = {
+            walking: {
+                title: "Brisk Walking",
+                description: "30 minutes of brisk walking can significantly improve blood sugar control."
+            },
+            swimming: {
+                title: "Swimming",
+                description: "45 minutes of low-impact cardio that's easy on the joints and great for overall fitness."
+            },
+            cycling: {
+                title: "Cycling",
+                description: "40 minutes of cycling is excellent for improving insulin sensitivity and cardiovascular health."
+            },
+            yoga: {
+                title: "Yoga",
+                description: "30 minutes of yoga combines strength, flexibility, and stress reduction for holistic health benefits."
+            },
+            strength: {
+                title: "Strength Training",
+                description: "Engage in 30 minutes of strength training to build muscle mass, improving insulin sensitivity and blood sugar control."
+            },
+            dancing: {
+                title: "Dancing",
+                description: "Enjoy 30 minutes of dancing, a fun cardio exercise that improves balance, coordination, and mood."
+            },
+            jogging: {
+                title: "Jogging",
+                description: "20 minutes of jogging can boost cardiovascular health and help manage blood sugar levels."
+            },
+            pilates: {
+                title: "Pilates",
+                description: "35 minutes of Pilates can improve core strength, flexibility, and body awareness, beneficial for diabetes management."
+            }
+        };
+
+        function showExerciseModal(exerciseType) {
+            const modal = document.getElementById('exerciseModal');
+            const title = document.getElementById('modalTitle');
+            const description = document.getElementById('modalDescription');
+            
+            title.textContent = exercises[exerciseType].title;
+            description.textContent = exercises[exerciseType].description;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('exerciseModal').style.display = 'none';
+        }
+
+        function completeExercise() {
+            streak++;
+            progress += 12.5; // 100% / 8 exercises
+            if (progress > 100) progress = 100;
+            
+            updateStreak();
+            updateProgressBar();
+            closeModal();
+        }
+
+        function updateStreak() {
+            document.getElementById('streakCount').textContent = streak;
+        }
+
+        function updateProgressBar() {
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function showTip() {
+            const tips = [
+                "Stay hydrated during exercise to help regulate blood sugar.",
+                "Check your blood sugar before and after exercising.",
+                "Wear comfortable, supportive shoes to protect your feet.",
+                "Start slowly and gradually increase intensity over time.",
+                "Always carry a fast-acting carbohydrate snack with you.",
+                "Listen to your body and rest when needed."
+            ];
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            alert(randomTip);
+        }
+
+           // New function to reset the streak
+        function resetStreak() {
+            streak = 0;
+            progress = 0;
+            updateStreak();
+            updateProgressBar();
+            alert("Your streak has been reset to zero.");
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('exerciseModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
+{% block navbar %}
+{% endblock navbar %}
+
+
+{% block footer %}
+{% endblock footer %}
+
+
+{% endblock basepage %}

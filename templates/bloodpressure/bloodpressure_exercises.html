@@ -1,0 +1,205 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+<title>Blood Pressure Exercise Planner</title>
+{% endblock title %}
+
+{% block basepage %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .exercise-card {
+            background-color: #1f2937;
+            transition: all 0.3s ease;
+            border: 1px solid #374151;
+        }
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+        }
+        .btn {
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #556b2f;
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        @media (max-width: 640px) {
+            .exercise-type-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            .exercise-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4" style="margin-top: 2rem;">
+    <a href="{% url 'wellnessdata' %}" class="back-button fixed top-4 left-4 z-10" style="margin-top: 2rem;">
+        <img src="{% static 'images/backbutton1.png' %}" alt="Back" title="Go back" class="w-8 h-8">
+    </a>
+
+    <h1 class="text-2xl md:text-4xl font-bold text-center mb-8 mt-16 px-4">Blood Pressure Exercise Planner</h1>
+    
+    <div class="mb-8 px-4">
+        <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-4">
+            <button class="exercise-type-btn btn bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center justify-center" data-type="Cardio">
+                <i data-lucide="heart" class="inline mr-2 w-4 h-4"></i>Cardio
+            </button>
+            <button class="exercise-type-btn btn bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center justify-center" data-type="Strength">
+                <i data-lucide="dumbbell" class="inline mr-2 w-4 h-4"></i>Strength
+            </button>
+            <button class="exercise-type-btn btn bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center justify-center" data-type="Flexibility">
+                <i data-lucide="stretch" class="inline mr-2 w-4 h-4"></i>Flexibility
+            </button>
+        </div>
+    </div>
+
+    <div id="exerciseList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4"></div>
+
+    <div class="mt-8 px-4">
+        <h2 class="text-xl md:text-2xl font-bold mb-4">Your Progress</h2>
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <h3 class="text-lg mb-2">Weekly Goal</h3>
+            <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progressText" class="text-sm">0 out of 6 exercises completed this week</p>
+            <div class="flex items-center justify-between mt-4">
+                <div>
+                    <h3 class="text-lg mb-2">Exercise Streak</h3>
+                    <p id="streakCount" class="text-2xl md:text-3xl font-bold">0 days</p>
+                </div>
+                <i data-lucide="award" class="text-yellow-500 w-8 h-8 md:w-12 md:h-12"></i>
+            </div>
+            <button id="resetStreakButton" class="btn bg-red-600 text-white font-bold py-2 px-4 rounded mt-4 w-full">
+                Reset Streak
+            </button>
+        </div>
+    </div>
+
+    <div id="tipButton" class="fixed bottom-4 right-4 bg-olive text-white p-3 md:p-4 rounded-full cursor-pointer shadow-lg">
+        <i data-lucide="lightbulb" class="w-5 h-5 md:w-6 md:h-6"></i>
+    </div>
+
+  <script>
+      const exerciseTypes = {
+          Cardio: [
+              { name: 'Brisk Walking', duration: '30 mins', intensity: 'Moderate', benefits: 'Lowers blood pressure and improves cardiovascular health', image: "{% static 'images/bloodpressure/briskwalk.gif' %}" },
+              { name: 'Swimming', duration: '45 mins', intensity: 'Moderate to High', benefits: 'Low-impact exercise that reduces blood pressure and improves heart health', image: "{% static 'images/bloodpressure/swimming.gif' %}" },
+              { name: 'Cycling', duration: '30 mins', intensity: 'Moderate to High', benefits: 'Improves circulation and helps lower blood pressure', image: "{% static 'images/bloodpressure/cycling.gif' %}" },
+          ],
+          Strength: [
+              { name: 'Resistance Band Exercises', duration: '3 sets of 12 reps', intensity: 'Moderate', benefits: 'Builds strength and helps regulate blood pressure', image: "{% static 'images/bloodpressure/resistance.gif' %}" },
+              { name: 'Bodyweight Squats', duration: '3 sets of 15 reps', intensity: 'Moderate', benefits: 'Improves lower body strength and circulation', image: "{% static 'images/bloodpressure/squats.gif' %}" },
+              { name: 'Wall Push-ups', duration: '3 sets of 10 reps', intensity: 'Low to Moderate', benefits: 'Strengthens upper body without straining the heart', image: "{% static 'images/bloodpressure/wallpushup.gif' %}" },
+          ],
+          Flexibility: [
+              { name: 'Yoga for Hypertension', duration: '20 mins', intensity: 'Low to Moderate', benefits: 'Reduces stress and helps lower blood pressure', image: "{% static 'images/bloodpressure/hyperstretch.gif' %}" },
+              { name: 'Deep Breathing Exercises', duration: '15 mins', intensity: 'Low', benefits: 'Calms the nervous system and may help reduce blood pressure', image: "{% static 'images/bloodpressure/breathing.gif' %}" },
+              { name: 'Gentle Stretching', duration: '15 mins', intensity: 'Low', benefits: 'Improves flexibility and promotes relaxation', image: "{% static 'images/bloodpressure/stretching.gif' %}" },
+          ],
+      };
+
+      let currentExercises = 0;
+      let streak = 0;
+
+      function updateExerciseList(type) {
+        const exerciseList = document.getElementById('exerciseList');
+        exerciseList.innerHTML = '';
+        exerciseTypes[type].forEach((exercise, index) => {
+            const card = document.createElement('div');
+            card.className = 'exercise-card rounded-lg overflow-hidden shadow-lg p-4 md:p-6';
+            card.innerHTML = `
+                <img src="${exercise.image}" alt="${exercise.name}" class="w-full h-32 md:h-40 object-cover mb-4 rounded">
+                <h3 class="text-lg md:text-xl font-bold mb-2">${exercise.name}</h3>
+                <p class="text-gray-400 mb-4 text-sm md:text-base">${exercise.duration}</p>
+                <p class="text-sm md:text-base"><strong>Intensity:</strong> ${exercise.intensity}</p>
+                <p class="text-sm md:text-base"><strong>Benefits:</strong> ${exercise.benefits}</p>
+                <button class="complete-exercise btn bg-olive text-white font-bold py-2 px-4 rounded mt-4 w-full text-sm md:text-base">
+                    Complete Exercise
+                </button>
+            `;
+            exerciseList.appendChild(card);
+        });
+        addCompleteExerciseListeners();
+    }
+
+      function addCompleteExerciseListeners() {
+          document.querySelectorAll('.complete-exercise').forEach(button => {
+              button.addEventListener('click', () => {
+                  currentExercises++;
+                  streak++;
+                  updateProgress();
+              });
+          });
+      }
+
+      function updateProgress() {
+          const progressBar = document.getElementById('progressBar');
+          const progressText = document.getElementById('progressText');
+          const streakCount = document.getElementById('streakCount');
+          const progress = (currentExercises / 6) * 100;
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `${currentExercises} out of 6 exercises completed this week`;
+          streakCount.textContent = `${streak} days`;
+      }
+
+      document.querySelectorAll('.exercise-type-btn').forEach(button => {
+          button.addEventListener('click', () => {
+              updateExerciseList(button.getAttribute('data-type'));
+          });
+      });
+
+      document.getElementById('tipButton').addEventListener('click', () => {
+          alert('Tip: Always consult with your doctor before starting a new exercise routine, especially if you have high blood pressure!');
+      });
+
+      document.getElementById('resetStreakButton').addEventListener('click', () => {
+        currentExercises = 0;
+        streak = 0;
+        updateProgress();
+    });
+
+    updateProgress();
+
+      // Initialize with Cardio exercises
+      updateExerciseList('Cardio');
+
+      // Initialize Lucide icons
+      lucide.createIcons();
+  </script>
+</body>
+</html>
+
+{% block navbar %}
+{% endblock navbar %}
+
+
+{% block footer %}
+{% endblock footer %}
+
+
+{% endblock basepage %}
+
+
+
+
+
+
+
+
+
+
+
+
